@@ -1,7 +1,7 @@
 package main
 
 import (
-	"PcWrnChecker/PcWrnCheckerSvr/pwcpkg"
+	pwc_svr_arg "PcWrnChecker/PcWrnCheckerSvr/pwcpkg"
 	"fmt"
 )
 
