@@ -1,9 +1,8 @@
 package main
 
 import (
+	"PcWrnChecker/PcWrnCheckerSvr/pwcpkg/pwc_svr_arg"
 	"fmt"
-
-	"pwcpkg/svr/pwc_svr_arg"
 )
 
 func main() {
