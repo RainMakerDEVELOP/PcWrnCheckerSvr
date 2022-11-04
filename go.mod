@@ -1,3 +1,3 @@
-module pwcpkg/svr
+module PcWrnChecker/PcWrnCheckerSvr
 
 go 1.19
