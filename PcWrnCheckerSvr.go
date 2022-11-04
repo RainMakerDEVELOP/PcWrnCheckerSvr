@@ -7,11 +7,11 @@ import (
 	"net"
 )
 
-const addr = "localhost:8888"
+const addr = "localhost:1234"
 
 var m_mapClientInfo map[string]pwc_svr_arg.PwcArg
 
-func echoBackCapitalized(conn net.Conn) {
+func proc_connection(conn net.Conn) {
 	// conn에 리더(reader)를 설정한다(io.Reader)
 	reader := bufio.NewReader(conn)
 
@@ -27,7 +27,7 @@ func echoBackCapitalized(conn net.Conn) {
 		// 읽어온 데이터의 첫 줄을 가져온다.
 		data, err := reader.ReadString('\n')
 		if err != nil {
-			fmt.Printf("error reading data : %s\n", err.Error())
+			fmt.Printf("ReadString 에러 : %s\n", err.Error())
 			return
 		}
 
@@ -49,9 +49,9 @@ func echoBackCapitalized(conn net.Conn) {
 }
 
 func main() {
-	fmt.Println("-------------------------------------------------")
-	fmt.Println("---------- Pc Wrn Checker Server Start ----------")
-	fmt.Println("-------------------------------------------------")
+	fmt.Println("----------------------------------")
+	fmt.Println("---------- Server Start ----------")
+	fmt.Println("----------------------------------")
 
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -63,17 +63,17 @@ func main() {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			fmt.Printf("encountered an error accepting connection : %s\n", err.Error())
+			fmt.Printf("Accept 에러 : %s\n", err.Error())
 
 			// 오류가 있으면 다시 시도한다
 			continue
 		}
 
 		// 이 작업을 비동기로 처리하면 잠재적으로 워커 풀을 위해 좋은 사용 사례가 될 것이다
-		go echoBackCapitalized(conn)
+		go proc_connection(conn)
 	}
 
-	fmt.Println("-------------------------------------------------")
-	fmt.Println("---------- Pc Wrn Checker Server End   ----------")
-	fmt.Println("-------------------------------------------------")
+	fmt.Println("----------------------------------")
+	fmt.Println("---------- Server End   ----------")
+	fmt.Println("----------------------------------")
 }
