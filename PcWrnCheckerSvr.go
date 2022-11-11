@@ -9,7 +9,7 @@ import (
 
 const addr = "localhost:1234"
 
-var m_mapClientInfo map[string]pwc_svr_arg.PwcArg
+var m_mapClientInfo map[string]*pwc_svr_arg.PwcArg
 
 func proc_connection(conn net.Conn) {
 	// conn에 리더(reader)를 설정한다(io.Reader)
@@ -30,6 +30,12 @@ func proc_connection(conn net.Conn) {
 			fmt.Printf("ReadString 에러 : %s\n", err.Error())
 			return
 		}
+
+		// 여기에 m_mapClientInfo[] 의 Value 에 해당하는 map 을 생성하는 루틴 필요할 듯 (2022.11.11)
+
+		m_mapClientInfo[remoteAddr].ConstructMap()
+		// vClientInfo.ConstructMap()
+		// m_mapClientInfo[remoteAddr] = vClientInfo
 
 		// 해당 주소의 모니터링 정보에 모니터링하고자 하는 항목이 있는지 조사
 		vItem, ok := vClientInfo.ExistClient(data)
@@ -57,6 +63,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	m_mapClientInfo = make(map[string]*pwc_svr_arg.PwcArg)
 
 	defer ln.Close()
 	fmt.Printf("listening on : %s\n", addr)

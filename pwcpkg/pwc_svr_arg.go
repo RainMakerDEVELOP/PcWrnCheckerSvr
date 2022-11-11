@@ -11,18 +11,24 @@ type PwcArg_Item struct {
 }
 
 type PwcArg struct {
-	mapMon_Item map[string]PwcArg_Item
+	mapMon_Item map[string]*PwcArg_Item
 }
 
-func (pa PwcArg) AddClient(itemName string) bool {
-	var pi PwcArg_Item
+func (pa *PwcArg) ConstructMap() map[string]*PwcArg_Item {
+	pa.mapMon_Item = make(map[string]*PwcArg_Item)
+
+	return pa.mapMon_Item
+}
+
+func (pa *PwcArg) AddClient(itemName string) bool {
+	var pi *PwcArg_Item
 	pi.StartTime = time.Now() // 신규 추가시에는 시작 시간만 기록한다
 	pa.mapMon_Item[itemName] = pi
 
 	return true
 }
 
-func (pa PwcArg) ExistClient(itemName string) (PwcArg_Item, bool) {
+func (pa *PwcArg) ExistClient(itemName string) (*PwcArg_Item, bool) {
 	vItemMap, ok := pa.mapMon_Item[itemName]
 
 	return vItemMap, ok
