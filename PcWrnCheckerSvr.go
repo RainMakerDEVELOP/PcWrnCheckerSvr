@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"strings"
 )
 
 const addr = "localhost:1234"
@@ -15,14 +16,28 @@ func proc_connection(conn net.Conn) {
 	// conn에 리더(reader)를 설정한다(io.Reader)
 	reader := bufio.NewReader(conn)
 
-	remoteAddr := conn.RemoteAddr().String()
+	remoteFullAddr := conn.RemoteAddr().String()
 
-	fmt.Printf("remoteAddr : %s\n", remoteAddr)
+	fmt.Printf("remoteFullAddr : %s\n", remoteFullAddr)
+
+	nColonIdx := strings.Index(remoteFullAddr, ":")
+
+	var remoteIpAddr string
+
+	if nColonIdx >= 0 {
+		if beforeFullAddr, _, ok := strings.Cut(remoteFullAddr, ":"); ok {
+			remoteIpAddr = beforeFullAddr
+		} else {
+			remoteIpAddr = beforeFullAddr
+		}
+
+	}
 
 	// 해당 주소가 목록에 있는지 조사
-	_, ok := m_mapClientInfo[remoteAddr]
+	_, ok := m_mapClientInfo[remoteIpAddr]
 
 	if ok == true { // 해당 주소가 목록에 있으면
+		fmt.Printf("이미 맵에 존재하는 클라이언트 주소 (%v)\n", remoteIpAddr)
 	} else { // 해당 주소가 목록에 없으면
 		// 읽어온 데이터의 첫 줄을 가져온다.
 		data, err := reader.ReadString('\n')
@@ -32,26 +47,26 @@ func proc_connection(conn net.Conn) {
 		}
 
 		// 여기에 m_mapClientInfo[] 의 Value 에 해당하는 map 을 생성하는 루틴 필요할 듯 (2022.11.11)
-		m_mapClientInfo[remoteAddr] = &pwc_svr_arg.PwcArg{}
+		m_mapClientInfo[remoteIpAddr] = &pwc_svr_arg.PwcArg{}
 
-		m_mapClientInfo[remoteAddr].ConstructMap()
+		m_mapClientInfo[remoteIpAddr].ConstructMap()
 		// vClientInfo.ConstructMap()
-		// m_mapClientInfo[remoteAddr] = vClientInfo
+		// m_mapClientInfo[remoteIpAddr] = vClientInfo
 
 		// 해당 주소의 모니터링 정보에 모니터링하고자 하는 항목이 있는지 조사
-		vItem, ok := m_mapClientInfo[remoteAddr].ExistClient(data)
+		vItem, ok := m_mapClientInfo[remoteIpAddr].ExistClient(data)
 
 		if ok == true { // 해당 항목이 있으면, 항목의 모니터링 값을 추가
 			fmt.Printf("ExistClient vItem.StartTime = '%s'\n", vItem.StartTime.String())
 		} else { // 해당 항목이 없으면 추가
-			addRet := m_mapClientInfo[remoteAddr].AddClient(data)
+			addRet := m_mapClientInfo[remoteIpAddr].AddClient(data)
 
-			fmt.Printf("AddClient Ret = '%d'\n", addRet)
+			fmt.Printf("AddClient Ret = '%v'\n", addRet)
 		}
 		// 출력한 다음 데이터를 다시 보낸다.
 		// fmt.Printf("Received : %s\n", data)
 		// conn.Write([]byte(strings.ToUpper(data)))
-		// m_mapClientInfo[remoteAddr] =
+		// m_mapClientInfo[remoteIpAddr] =
 	}
 }
 
