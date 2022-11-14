@@ -20,7 +20,7 @@ func proc_connection(conn net.Conn) {
 	fmt.Printf("remoteAddr : %s\n", remoteAddr)
 
 	// 해당 주소가 목록에 있는지 조사
-	vClientInfo, ok := m_mapClientInfo[remoteAddr]
+	_, ok := m_mapClientInfo[remoteAddr]
 
 	if ok == true { // 해당 주소가 목록에 있으면
 	} else { // 해당 주소가 목록에 없으면
@@ -32,18 +32,19 @@ func proc_connection(conn net.Conn) {
 		}
 
 		// 여기에 m_mapClientInfo[] 의 Value 에 해당하는 map 을 생성하는 루틴 필요할 듯 (2022.11.11)
+		m_mapClientInfo[remoteAddr] = &pwc_svr_arg.PwcArg{}
 
 		m_mapClientInfo[remoteAddr].ConstructMap()
 		// vClientInfo.ConstructMap()
 		// m_mapClientInfo[remoteAddr] = vClientInfo
 
 		// 해당 주소의 모니터링 정보에 모니터링하고자 하는 항목이 있는지 조사
-		vItem, ok := vClientInfo.ExistClient(data)
+		vItem, ok := m_mapClientInfo[remoteAddr].ExistClient(data)
 
 		if ok == true { // 해당 항목이 있으면, 항목의 모니터링 값을 추가
 			fmt.Printf("ExistClient vItem.StartTime = '%s'\n", vItem.StartTime.String())
 		} else { // 해당 항목이 없으면 추가
-			addRet := vClientInfo.AddClient(data)
+			addRet := m_mapClientInfo[remoteAddr].AddClient(data)
 
 			fmt.Printf("AddClient Ret = '%d'\n", addRet)
 		}
