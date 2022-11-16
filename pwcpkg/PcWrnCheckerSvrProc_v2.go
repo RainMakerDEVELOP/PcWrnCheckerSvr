@@ -7,12 +7,18 @@ package svrproc
 import (
 	pwc_svr_arg "PcWrnChecker/PcWrnCheckerSvr/pwcpkg/arg"
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"strings"
 )
+
+type RestData struct {
+	ItemName string `json:"itemName"`
+	Value    string `json:"value"`
+}
 
 // const addr = "localhost:1234"
 const port = ":1234"
@@ -118,23 +124,33 @@ func Run() {
 	http.ListenAndServe(port, nil)
 }
 
-func UsedCpuHandler(w http.ResponseWriter, req *http.Request) {
+func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Enter UsedCpuHandler Function")
 
-	ip, err := getIP(req)
+	defer fmt.Println("Proc End UsedCpuHandler Function")
+
+	ip, err := getIP(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	switch req.Method {
-	case http.MethodGet: // 조회
-		break
-	case http.MethodPost: // 등록
-		break
-	}
-
 	fmt.Printf("ClientIP : %v\n", ip)
 
-	fmt.Println("Proc End UsedCpuHandler Function")
+	var restData RestData
+
+	switch r.Method {
+	case http.MethodGet: // 조회
+		err := json.NewDecoder(r.Body).Decode(&restData)
+
+		if err != nil {
+			json.NewEncoder(w).Encode(err.Error())
+		}
+	case http.MethodPost: // 등록
+		err := json.NewDecoder(r.Body).Decode(&restData)
+
+		if err != nil {
+			json.NewEncoder(w).Encode(err.Error())
+		}
+	}
 }
