@@ -1,0 +1,103 @@
+package main
+
+import (
+	pwc_svr_arg "PcWrnChecker/PcWrnCheckerSvr/pwcpkg"
+	"bufio"
+	"fmt"
+	"net"
+	"strings"
+)
+
+const addr = "localhost:1234"
+
+var m_mapClientInfo map[string]*pwc_svr_arg.PwcArg
+
+func proc_connection(conn net.Conn) {
+	// conn에 리더(reader)를 설정한다(io.Reader)
+	reader := bufio.NewReader(conn)
+
+	remoteFullAddr := conn.RemoteAddr().String()
+
+	fmt.Printf("remoteFullAddr : %s\n", remoteFullAddr)
+
+	nColonIdx := strings.Index(remoteFullAddr, ":")
+
+	var remoteIpAddr string
+
+	if nColonIdx >= 0 {
+		if beforeFullAddr, _, ok := strings.Cut(remoteFullAddr, ":"); ok {
+			remoteIpAddr = beforeFullAddr
+		} else {
+			remoteIpAddr = beforeFullAddr
+		}
+
+	}
+
+	// 해당 주소가 목록에 있는지 조사
+	_, ok := m_mapClientInfo[remoteIpAddr]
+
+	if ok == true { // 해당 주소가 목록에 있으면
+		fmt.Printf("이미 맵에 존재하는 클라이언트 주소 (%v)\n", remoteIpAddr)
+	} else { // 해당 주소가 목록에 없으면
+		// 읽어온 데이터의 첫 줄을 가져온다.
+		data, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Printf("ReadString 에러 : %s\n", err.Error())
+			return
+		}
+
+		// 여기에 m_mapClientInfo[] 의 Value 에 해당하는 map 을 생성하는 루틴 필요할 듯 (2022.11.11)
+		m_mapClientInfo[remoteIpAddr] = &pwc_svr_arg.PwcArg{}
+
+		m_mapClientInfo[remoteIpAddr].ConstructMap()
+		// vClientInfo.ConstructMap()
+		// m_mapClientInfo[remoteIpAddr] = vClientInfo
+
+		// 해당 주소의 모니터링 정보에 모니터링하고자 하는 항목이 있는지 조사
+		vItem, ok := m_mapClientInfo[remoteIpAddr].ExistClient(data)
+
+		if ok == true { // 해당 항목이 있으면, 항목의 모니터링 값을 추가
+			fmt.Printf("ExistClient vItem.StartTime = '%s'\n", vItem.StartTime.String())
+		} else { // 해당 항목이 없으면 추가
+			addRet := m_mapClientInfo[remoteIpAddr].AddClient(data)
+
+			fmt.Printf("AddClient Ret = '%v'\n", addRet)
+		}
+		// 출력한 다음 데이터를 다시 보낸다.
+		// fmt.Printf("Received : %s\n", data)
+		// conn.Write([]byte(strings.ToUpper(data)))
+		// m_mapClientInfo[remoteIpAddr] =
+	}
+}
+
+func main() {
+	fmt.Println("----------------------------------")
+	fmt.Println("---------- Server Start ----------")
+	fmt.Println("----------------------------------")
+
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		panic(err)
+	}
+
+	m_mapClientInfo = make(map[string]*pwc_svr_arg.PwcArg)
+
+	defer ln.Close()
+	fmt.Printf("listening on : %s\n", addr)
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			fmt.Printf("Accept 에러 : %s\n", err.Error())
+
+			// 오류가 있으면 다시 시도한다
+			continue
+		}
+
+		// 이 작업을 비동기로 처리하면 잠재적으로 워커 풀을 위해 좋은 사용 사례가 될 것이다
+		go proc_connection(conn)
+	}
+
+	fmt.Println("----------------------------------")
+	fmt.Println("---------- Server End   ----------")
+	fmt.Println("----------------------------------")
+}
