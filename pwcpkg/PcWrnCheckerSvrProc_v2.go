@@ -16,7 +16,7 @@ import (
 )
 
 type RestData struct {
-	ItemName string `json:"itemName"`
+	ItemName string `json:"itemname"`
 	Value    string `json:"value"`
 }
 
@@ -148,6 +148,13 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		// Client IP에 해당하는 restData.itemname 의 데이터를 찾는다.
+
+		// 없으면 없음 응답 데이터 리턴
+
+		// 조회된 데이터를 http 응답 데이터에 설정한다.
+
 	case http.MethodPost: // 등록
 		err := json.NewDecoder(r.Body).Decode(&restData)
 
@@ -156,6 +163,13 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		// Client IP에 해당하는 restData.itemname 의 데이터를 찾는다.
+
+		// 없으면 신규 데이터 등록
+
+		// 있으면 기존 데이터에 추가
+
 	}
 
 	w.WriteHeader(http.StatusOK)
