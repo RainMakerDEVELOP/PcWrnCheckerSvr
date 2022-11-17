@@ -145,12 +145,18 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			json.NewEncoder(w).Encode(err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 	case http.MethodPost: // 등록
 		err := json.NewDecoder(r.Body).Decode(&restData)
 
 		if err != nil {
 			json.NewEncoder(w).Encode(err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
