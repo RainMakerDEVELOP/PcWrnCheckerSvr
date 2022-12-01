@@ -150,7 +150,7 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// 응답 테스트용
-		json.NewEncoder(w).Encode("GET")
+		// json.NewEncoder(w).Encode("GET")
 		json.NewEncoder(w).Encode(restData) // 테스트용 Echo 데이터 설정
 
 		// Client IP에 해당하는 restData.itemname 의 데이터를 찾는다.
@@ -169,7 +169,7 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// 응답 테스트용
-		json.NewEncoder(w).Encode("POST")
+		// json.NewEncoder(w).Encode("POST")
 		json.NewEncoder(w).Encode(restData) // 테스트용 Echo 데이터 설정
 
 		// Client IP에 해당하는 restData.itemname 의 데이터를 찾는다.
@@ -181,4 +181,5 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
 }
