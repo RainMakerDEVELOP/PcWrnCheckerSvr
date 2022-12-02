@@ -129,7 +129,7 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer fmt.Println("Proc End UsedCpuHandler Function")
 
-	// [MEMO] 2022.12.02 이 부분은 차후, json 외 다른 방식 데이터에 대한 처리도 고려해보면 좋을 듯
+	// [MEMO] 2022.12.02 이 부분은 차후, json 외 다른 방식 데이터에 대한 처리도 인터페이스를 만드는 것으로 고려해보면 좋을 듯
 	if strings.Compare(r.Header.Get("Content-Type"), "application/json") != 0 {
 		strLog := "return! Request Data Content-Type is '" + r.Header.Get("Content-Type") + "'"
 		fmt.Println(strLog)
