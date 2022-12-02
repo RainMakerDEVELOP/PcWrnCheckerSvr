@@ -49,7 +49,7 @@ func proc_connection(conn net.Conn) {
 	// 해당 주소가 목록에 있는지 조사
 	_, ok := m_mapClientInfo[remoteIpAddr]
 
-	if ok == true { // 해당 주소가 목록에 있으면
+	if ok { // 해당 주소가 목록에 있으면
 		fmt.Printf("이미 맵에 존재하는 클라이언트 주소 (%v)\n", remoteIpAddr)
 	} else { // 해당 주소가 목록에 없으면
 		// 읽어온 데이터의 첫 줄을 가져온다.
@@ -129,19 +129,22 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer fmt.Println("Proc End UsedCpuHandler Function")
 
+	// [MEMO] 2022.12.02 이 부분은 차후, json 외 다른 방식 데이터에 대한 처리도 고려해보면 좋을 듯
 	if strings.Compare(r.Header.Get("Content-Type"), "application/json") != 0 {
 		strLog := "return! Request Data Content-Type is '" + r.Header.Get("Content-Type") + "'"
 		fmt.Println(strLog)
 
 		// json.NewEncoder(w).Encode(strLog)
 		// w.WriteHeader(http.StatusBadRequest)
-		http.Error(w, "Content-Type is Not 'application/json'", http.StatusBadRequest)
+		fmt.Println("Content-Type Error")
+		http.Error(w, "Content-Type Error", http.StatusBadRequest)
 		return
 	}
 
 	ip, err := getIP(r)
 	if err != nil {
 		// w.WriteHeader(http.StatusInternalServerError)
+		fmt.Printf("getIP Error : '%v'\n", err.Error())
 		http.Error(w, "Getting ClientIP Failed", http.StatusInternalServerError)
 		return
 	}
@@ -156,6 +159,7 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// json.NewEncoder(w).Encode(err.Error())
 			// w.WriteHeader(http.StatusBadRequest)
+			fmt.Printf("GET json.NewDecoder Error : '%v'\n", err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -176,6 +180,7 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// json.NewEncoder(w).Encode(err.Error())
 			// w.WriteHeader(http.StatusBadRequest)
+			fmt.Printf("POST json.NewDecoder Error : '%v'\n", err.Error())
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
