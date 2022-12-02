@@ -129,23 +129,34 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer fmt.Println("Proc End UsedCpuHandler Function")
 
-	ip, err := getIP(r)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	if strings.Compare(r.Header.Get("Content-Type"), "application/json") != 0 {
+		strLog := "return! Request Data Content-Type is '" + r.Header.Get("Content-Type") + "'"
+		fmt.Println(strLog)
+
+		// json.NewEncoder(w).Encode(strLog)
+		// w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, "Content-Type is Not 'application/json'", http.StatusBadRequest)
 		return
 	}
 
+	ip, err := getIP(r)
+	if err != nil {
+		// w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "Getting ClientIP Failed", http.StatusInternalServerError)
+		return
+	}
 	fmt.Printf("ClientIP : %v\n", ip)
 
-	var restData RestData
+	var restData RestData // 요청 JSON 데이터를 담을 구조체 변수 선언
 
 	switch r.Method {
 	case http.MethodGet: // 조회
 		err := json.NewDecoder(r.Body).Decode(&restData)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(err.Error())
-			w.WriteHeader(http.StatusBadRequest)
+			// json.NewEncoder(w).Encode(err.Error())
+			// w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -163,8 +174,9 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 		err := json.NewDecoder(r.Body).Decode(&restData)
 
 		if err != nil {
-			json.NewEncoder(w).Encode(err.Error())
-			w.WriteHeader(http.StatusBadRequest)
+			// json.NewEncoder(w).Encode(err.Error())
+			// w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
