@@ -5,7 +5,9 @@
 package svrproc
 
 import (
+	com_code "PcWrnChecker/PcWrnCheckerSvr/common"
 	pwc_svr_arg "PcWrnChecker/PcWrnCheckerSvr/pwcpkg/arg"
+	reqdataparser "PcWrnChecker/PcWrnCheckerSvr/reqdataparser"
 	"bufio"
 	"encoding/json"
 	"errors"
@@ -15,9 +17,12 @@ import (
 	"strings"
 )
 
-type RestData struct {
-	ItemName string `json:"itemname"`
-	Value    string `json:"value"`
+type HttpDataParser interface {
+	ReqDataParse() (bool, com_code.RestData)
+}
+
+func httpDataParse(w http.ResponseWriter, r *http.Request, hdp HttpDataParser) (bool, com_code.RestData) {
+	return hdp.ReqDataParse()
 }
 
 // const addr = "localhost:1234"
@@ -129,8 +134,25 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer fmt.Println("Proc End UsedCpuHandler Function")
 
+	// 요청 데이터의 ClientIP 확인
+	ip, err := getIP(r)
+	if err != nil {
+		fmt.Printf("getIP Error : '%v'\n", err.Error())
+		http.Error(w, "Getting ClientIP Failed", http.StatusInternalServerError)
+		return
+	}
+	fmt.Printf("ClientIP : %v\n", ip)
+
+	var parser HttpDataParser
+
 	// [MEMO] 2022.12.02 이 부분은 차후, json 외 다른 방식 데이터에 대한 처리도 인터페이스를 만드는 것으로 고려해보면 좋을 듯
-	if strings.Compare(r.Header.Get("Content-Type"), "application/json") != 0 {
+	if strings.Compare(r.Header.Get("Content-Type"), "application/json") == 0 {
+		// JSON 인 경우 처리
+		parser = reqdataparser.JsonData{}
+	} else if strings.Compare(r.Header.Get("Content-Type"), "application/xml") == 0 {
+		// XML 인 경우 처리
+		parser = reqdataparser.XmlData{}
+	} else {
 		strLog := "return! Request Data Content-Type is '" + r.Header.Get("Content-Type") + "'"
 		fmt.Println(strLog)
 
@@ -141,16 +163,9 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ip, err := getIP(r)
-	if err != nil {
-		// w.WriteHeader(http.StatusInternalServerError)
-		fmt.Printf("getIP Error : '%v'\n", err.Error())
-		http.Error(w, "Getting ClientIP Failed", http.StatusInternalServerError)
-		return
-	}
-	fmt.Printf("ClientIP : %v\n", ip)
+	var restData com_code.RestData // 요청 JSON 데이터를 담을 구조체 변수 선언
 
-	var restData RestData // 요청 JSON 데이터를 담을 구조체 변수 선언
+	_, restData = parser.ReqDataParse()
 
 	switch r.Method {
 	case http.MethodGet: // 조회
