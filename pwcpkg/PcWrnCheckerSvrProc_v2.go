@@ -5,11 +5,9 @@
 package svrproc
 
 import (
-	com_code "PcWrnChecker/PcWrnCheckerSvr/common"
 	pwc_svr_arg "PcWrnChecker/PcWrnCheckerSvr/pwcpkg/arg"
 	reqdataparser "PcWrnChecker/PcWrnCheckerSvr/reqdataparser"
 	"bufio"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -18,12 +16,12 @@ import (
 )
 
 type HttpDataParser interface {
-	ReqDataParse() (bool, com_code.RestData)
+	ReqDataParse() bool
 }
 
-func httpDataParse(w http.ResponseWriter, r *http.Request, hdp HttpDataParser) (bool, com_code.RestData) {
-	return hdp.ReqDataParse()
-}
+// func httpDataParse(w *http.ResponseWriter, r *http.Request, hdp HttpDataParser) (bool, com_code.RestData) {
+// 	return hdp.ReqDataParse()
+// }
 
 // const addr = "localhost:1234"
 const port = ":1234"
@@ -148,70 +146,22 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 	// [MEMO] 2022.12.02 이 부분은 차후, json 외 다른 방식 데이터에 대한 처리도 인터페이스를 만드는 것으로 고려해보면 좋을 듯
 	if strings.Compare(r.Header.Get("Content-Type"), "application/json") == 0 {
 		// JSON 인 경우 처리
-		parser = reqdataparser.JsonData{}
+		parser = reqdataparser.JsonData{Writer: &w, Reader: r}
 	} else if strings.Compare(r.Header.Get("Content-Type"), "application/xml") == 0 {
 		// XML 인 경우 처리
-		parser = reqdataparser.XmlData{}
+		parser = reqdataparser.XmlData{Writer: &w, Reader: r}
 	} else {
+		// 허용되지 않은 데이터 타입의 경우 처리
 		strLog := "return! Request Data Content-Type is '" + r.Header.Get("Content-Type") + "'"
 		fmt.Println(strLog)
 
-		// json.NewEncoder(w).Encode(strLog)
-		// w.WriteHeader(http.StatusBadRequest)
 		fmt.Println("Content-Type Error")
 		http.Error(w, "Content-Type Error", http.StatusBadRequest)
 		return
 	}
 
-	var restData com_code.RestData // 요청 JSON 데이터를 담을 구조체 변수 선언
+	// [MEMO] 2022.12.06 데이터 타입에 따라, 파싱은 인터페이스로 처리되도록 함
+	bRet := parser.ReqDataParse()
 
-	_, restData = parser.ReqDataParse()
-
-	switch r.Method {
-	case http.MethodGet: // 조회
-		err := json.NewDecoder(r.Body).Decode(&restData)
-
-		if err != nil {
-			// json.NewEncoder(w).Encode(err.Error())
-			// w.WriteHeader(http.StatusBadRequest)
-			fmt.Printf("GET json.NewDecoder Error : '%v'\n", err.Error())
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		// 응답 테스트용
-		// json.NewEncoder(w).Encode("GET")
-		json.NewEncoder(w).Encode(restData) // 테스트용 Echo 데이터 설정
-
-		// Client IP에 해당하는 restData.itemname 의 데이터를 찾는다.
-
-		// 없으면 없음 응답 데이터 리턴
-
-		// 조회된 데이터를 http 응답 데이터에 설정한다.
-
-	case http.MethodPost: // 등록
-		err := json.NewDecoder(r.Body).Decode(&restData)
-
-		if err != nil {
-			// json.NewEncoder(w).Encode(err.Error())
-			// w.WriteHeader(http.StatusBadRequest)
-			fmt.Printf("POST json.NewDecoder Error : '%v'\n", err.Error())
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		// 응답 테스트용
-		// json.NewEncoder(w).Encode("POST")
-		json.NewEncoder(w).Encode(restData) // 테스트용 Echo 데이터 설정
-
-		// Client IP에 해당하는 restData.itemname 의 데이터를 찾는다.
-
-		// 없으면 신규 데이터 등록
-
-		// 있으면 기존 데이터에 추가
-
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
+	fmt.Printf("ReqDataParse Ret = '%v'\n", bRet)
 }

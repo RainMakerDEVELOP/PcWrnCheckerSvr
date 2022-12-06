@@ -1,6 +1,11 @@
 package commoncode
 
-type RestData struct {
+type RestData_Json struct {
 	ItemName string `json:"itemname"`
 	Value    string `json:"value"`
+}
+
+type RestData_Xml struct {
+	ItemName string
+	Value    string
 }
