@@ -7,8 +7,8 @@ package svrproc
 import (
 	pwc_svr_arg "PcWrnChecker/PcWrnCheckerSvr/pwcpkg/arg"
 	reqdataparser "PcWrnChecker/PcWrnCheckerSvr/reqdataparser"
+	"PcWrnChecker/PcWrnCheckerSvr/util"
 	"bufio"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -86,36 +86,6 @@ func proc_connection(conn net.Conn) {
 	}
 }
 
-// getIP returns the ip address from the http request
-func getIP(r *http.Request) (string, error) {
-	ips := r.Header.Get("X-Forwarded-For")
-	splitIps := strings.Split(ips, ",")
-
-	if len(splitIps) > 0 {
-		// get last IP in list since ELB prepends other user defined IPs, meaning the last one is the actual client IP.
-		netIP := net.ParseIP(splitIps[len(splitIps)-1])
-		if netIP != nil {
-			return netIP.String(), nil
-		}
-	}
-
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return "", err
-	}
-
-	netIP := net.ParseIP(ip)
-	if netIP != nil {
-		ip := netIP.String()
-		if ip == "::1" {
-			return "127.0.0.1", nil
-		}
-		return ip, nil
-	}
-
-	return "", errors.New("IP not found")
-}
-
 // v1 : 소켓 서버 방식
 // v2 : HTTP 서버 방식
 func Run() {
@@ -133,7 +103,7 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 	defer fmt.Println("Proc End UsedCpuHandler Function")
 
 	// 요청 데이터의 ClientIP 확인
-	ip, err := getIP(r)
+	ip, err := util.GetIP(r)
 	if err != nil {
 		fmt.Printf("getIP Error : '%v'\n", err.Error())
 		http.Error(w, "Getting ClientIP Failed", http.StatusInternalServerError)
@@ -143,7 +113,7 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 
 	var parser HttpDataParser
 
-	// [MEMO] 2022.12.02 이 부분은 차후, json 외 다른 방식 데이터에 대한 처리도 인터페이스를 만드는 것으로 고려해보면 좋을 듯
+	// Content-Type 별 처리
 	if strings.Compare(r.Header.Get("Content-Type"), "application/json") == 0 {
 		// JSON 인 경우 처리
 		parser = reqdataparser.JsonData{Writer: &w, Reader: r}
@@ -160,7 +130,7 @@ func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// [MEMO] 2022.12.06 데이터 타입에 따라, 파싱은 인터페이스로 처리되도록 함
+	// 2022.12.06 Content-Type 에 따라 파싱될 수 있도록 인터페이스로 처리
 	bRet := parser.ReqDataParse()
 
 	fmt.Printf("ReqDataParse Ret = '%v'\n", bRet)
