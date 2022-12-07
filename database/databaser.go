@@ -1,14 +1,16 @@
 package database
 
 type ConnInfo struct {
-	Addr string
-	Port string
+	Addr   string
+	Port   string
+	DbKind string
+	DbVer  string
 }
 
 // // singleton 객체
 // var DbInstance *databaser
 
-type databaser interface {
-	Init(string, string) error
+type Databaser interface {
+	Init(ConnInfo) error
 	// GetDbInstance() *databaser
 }

@@ -5,6 +5,8 @@
 package svrproc
 
 import (
+	"PcWrnChecker/PcWrnCheckerSvr/config"
+	"PcWrnChecker/PcWrnCheckerSvr/database"
 	pwc_svr_arg "PcWrnChecker/PcWrnCheckerSvr/pwcpkg/arg"
 	reqdataparser "PcWrnChecker/PcWrnCheckerSvr/reqdataparser"
 	"PcWrnChecker/PcWrnCheckerSvr/util"
@@ -27,6 +29,8 @@ type HttpDataParser interface {
 const port = ":1234"
 
 var m_mapClientInfo map[string]*pwc_svr_arg.PwcArg
+var m_config config.Config
+var m_dbConn database.Databaser
 
 func proc_connection(conn net.Conn) {
 	// conn에 리더(reader)를 설정한다(io.Reader)
@@ -90,6 +94,32 @@ func proc_connection(conn net.Conn) {
 // v2 : HTTP 서버 방식
 func Run() {
 	m_mapClientInfo = make(map[string]*pwc_svr_arg.PwcArg)
+
+	// 환경설정을 읽어온다.
+	m_config = config.Config{DbAddr: "localhost", DbPort: "3389"}
+	err := m_config.ReadConfig()
+	if err != nil {
+		fmt.Printf("ReadConfig Error. err = '%v'\n", err.Error())
+		return
+	}
+
+	// DB연결
+	connInfo := database.ConnInfo{Addr: m_config.DbAddr, Port: m_config.DbPort, DbKind: m_config.DbKind, DbVer: m_config.DbVer}
+
+	if strings.Compare(connInfo.DbKind, "REDIS") == 0 {
+		m_dbConn = &database.St_Redis_Db{}
+	} else if strings.Compare(connInfo.DbKind, "MSSQL") == 0 {
+		m_dbConn = &database.St_Redis_Db{}
+	} else {
+		fmt.Printf("Not Supported DBKind = '%v'\n", connInfo.DbKind)
+		return
+	}
+
+	errDbInit := m_dbConn.Init(connInfo)
+	if errDbInit != nil {
+		fmt.Printf("DB Initialize Error. err = '%v'\n", errDbInit.Error())
+		return
+	}
 
 	// CPU 사용량
 	http.HandleFunc("/USEDCPU", UsedCpuHandler)

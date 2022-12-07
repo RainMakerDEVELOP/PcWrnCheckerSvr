@@ -8,21 +8,38 @@ import (
 )
 
 // singleton 객체
-var dbInstance *stRedisDb
+var dbInstance *St_Redis_Db
 
-type stRedisDb struct {
+type St_Redis_Db struct {
 	connInfo ConnInfo
 }
 
-func (db stRedisDb) Init(addr string, port string) error {
-	dbInstance.connInfo = ConnInfo{Addr: addr, Port: port}
+func (db *St_Redis_Db) Init(connInfo ConnInfo) error {
+	dbConn, errGetInst := db.GetDbInstance()
 
-	fmt.Printf("REDIS connInfo = '%v'\n", db.connInfo)
+	if errGetInst != nil {
+		fmt.Println(errGetInst.Error())
+		return errGetInst
+	}
 
-	err := errors.Errorf("db init error")
-	return err
+	dbConn.connInfo = ConnInfo{Addr: connInfo.Addr, Port: connInfo.Port}
+
+	fmt.Printf("REDIS connInfo = '%v'\n", dbConn.connInfo)
+
+	return nil
+	// err := errors.Errorf("REDIS DB Init Error")
+	// return err
 }
 
-func (db stRedisDb) GetDbInstance() *stRedisDb {
-	return dbInstance
+func (db *St_Redis_Db) GetDbInstance() (*St_Redis_Db, error) {
+	if dbInstance == nil {
+		dbInstance = new(St_Redis_Db)
+	}
+
+	if dbInstance == nil {
+		err := errors.Errorf("REDIS DB Instance Initialize Failed")
+		return nil, err
+	}
+
+	return dbInstance, nil
 }
