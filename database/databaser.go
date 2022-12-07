@@ -5,10 +5,10 @@ type ConnInfo struct {
 	Port string
 }
 
-// singleton 객체
-var DbInstance *ConnInfo
+// // singleton 객체
+// var DbInstance *databaser
 
 type databaser interface {
 	Init(string, string) error
-	GetDbInstance() *ConnInfo
+	// GetDbInstance() *databaser
 }
