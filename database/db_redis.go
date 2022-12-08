@@ -1,9 +1,11 @@
 package database
 
 import (
+	"context"
 	"fmt"
+	"strings"
 
-	_ "github.com/go-redis/redis/v8"
+	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 )
 
@@ -29,6 +31,36 @@ func (db *St_Redis_Db) Init(connInfo ConnInfo) error {
 	return nil
 	// err := errors.Errorf("REDIS DB Init Error")
 	// return err
+}
+
+func (db *St_Redis_Db) ConnectDB() error {
+	dbConn, errGetInst := db.GetDbInstance()
+
+	if errGetInst != nil {
+		fmt.Println(errGetInst.Error())
+		return errGetInst
+	}
+
+	ctx := context.Background()
+
+	connAddrInfo := []string{dbConn.connInfo.Addr, dbConn.connInfo.Port}
+	fullconnAddr := strings.Join(connAddrInfo, ":")
+	rdb := redis.NewClient(&redis.Options{Addr: fullconnAddr, Password: "", DB: 0})
+
+	_, err := rdb.Ping(ctx).Result()
+
+	if err != nil {
+		fmt.Printf("REDIS ConnectDB Ping Result Check Failed. err = '%v'\n", err.Error())
+		return err
+	}
+
+	err = rdb.Set(ctx, "key", "value", 0).Err()
+	if err != nil {
+		fmt.Printf("REDIS ConnectDB rdb.Set Failed. err = '%v'\n", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func (db *St_Redis_Db) GetDbInstance() (*St_Redis_Db, error) {

@@ -115,10 +115,15 @@ func Run() {
 		return
 	}
 
-	errDbInit := m_dbConn.Init(connInfo)
+	errDbInit := m_dbConn.Init(connInfo) // 초기화
 	if errDbInit != nil {
 		fmt.Printf("DB Initialize Error. err = '%v'\n", errDbInit.Error())
 		return
+	}
+
+	errDbConn := m_dbConn.ConnectDB() // DB 연결
+	if errDbConn != nil {
+		fmt.Printf("DB Connect Error. err = '%v'\n", errDbConn.Error())
 	}
 
 	// CPU 사용량

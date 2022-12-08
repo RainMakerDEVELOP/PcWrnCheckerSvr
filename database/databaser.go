@@ -13,4 +13,5 @@ type ConnInfo struct {
 type Databaser interface {
 	Init(ConnInfo) error
 	// GetDbInstance() *databaser
+	ConnectDB() error
 }

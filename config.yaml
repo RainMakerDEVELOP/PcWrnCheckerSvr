@@ -1,4 +1,4 @@
 dbaddr: 127.0.0.1
-dbport: 3306
+dbport: 6379
 dbkind: REDIS
 dbver: 0
