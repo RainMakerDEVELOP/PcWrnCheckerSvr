@@ -136,25 +136,28 @@ func Run() {
 }
 
 func UsedCpuHandler(w http.ResponseWriter, r *http.Request) {
-	writer := w
-	reader := *r
-	go proc_UsedCpuHandler(writer, reader)
-}
-
-// USEDCPU 핸들러 데이터 처리 함수
-func proc_UsedCpuHandler(w http.ResponseWriter, r http.Request) {
-	fmt.Println("----------- START proc_UsedCpuHandler")
-
-	defer fmt.Println("----------- END proc_UsedCpuHandler")
-
 	// 요청 데이터의 ClientIP 확인
-	ip, err := util.GetIP(&r)
+	ip, err := util.GetIP(r)
 	if err != nil {
 		fmt.Printf("getIP Error : '%v'\n", err.Error())
 		http.Error(w, "Getting ClientIP Failed", http.StatusInternalServerError)
 		return
 	}
 	fmt.Printf("ClientIP : %v\n", ip)
+
+	writer := w
+	reader := *r
+
+	done := make(chan string) // http 연결이 유실되지 않도록 채널을 사용
+	go proc_UsedCpuHandler(writer, reader, ip, done)
+	fmt.Printf("return done = '%v'\n", <-done)
+}
+
+// USEDCPU 핸들러 데이터 처리 함수
+func proc_UsedCpuHandler(w http.ResponseWriter, r http.Request, ip string, done chan<- string) {
+	fmt.Println("----------- START proc_UsedCpuHandler")
+
+	defer fmt.Println("----------- END proc_UsedCpuHandler")
 
 	var parser HttpDataParser
 
@@ -172,6 +175,8 @@ func proc_UsedCpuHandler(w http.ResponseWriter, r http.Request) {
 
 		fmt.Println("Content-Type Error")
 		http.Error(w, "Content-Type Error", http.StatusBadRequest)
+
+		done <- ip
 		return
 	}
 
@@ -196,6 +201,7 @@ func proc_UsedCpuHandler(w http.ResponseWriter, r http.Request) {
 
 	if len(remoteIpAddr) <= 0 {
 		fmt.Println("IP 주소 조사 실패")
+		done <- ip
 		return
 	}
 
@@ -223,4 +229,6 @@ func proc_UsedCpuHandler(w http.ResponseWriter, r http.Request) {
 	}
 
 	// [PROC] DB 에 데이터 ISNERT, UPDATE 처리 필요
+
+	done <- ip
 }
