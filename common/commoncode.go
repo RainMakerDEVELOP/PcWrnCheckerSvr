@@ -9,3 +9,8 @@ type RestData_Xml struct {
 	ItemName string
 	Value    string
 }
+
+type RestData_Common struct {
+	ItemName string
+	Value    string
+}

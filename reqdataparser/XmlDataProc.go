@@ -9,18 +9,20 @@ import (
 )
 
 type XmlData struct {
-	Writer *http.ResponseWriter
-	Reader *http.Request
+	Writer http.ResponseWriter
+	Reader http.Request
 }
 
-func (data XmlData) ReqDataParse() bool {
+func (data XmlData) ReqDataParse() (bool, com_code.RestData_Common) {
 	rRestData := com_code.RestData_Xml{}
 	rData, err := io.ReadAll(data.Reader.Body)
 
+	retRestData := com_code.RestData_Common{}
+
 	if err != nil {
 		fmt.Println("xml Body Read Failed")
-		http.Error(*data.Writer, err.Error(), http.StatusBadRequest)
-		return false
+		http.Error(data.Writer, err.Error(), http.StatusBadRequest)
+		return false, retRestData
 	}
 
 	switch data.Reader.Method {
@@ -29,12 +31,15 @@ func (data XmlData) ReqDataParse() bool {
 
 		if err != nil {
 			fmt.Printf("GET xml.Unmarshal Error : '%v'\n", err.Error())
-			http.Error(*data.Writer, err.Error(), http.StatusBadRequest)
-			return false
+			http.Error(data.Writer, err.Error(), http.StatusBadRequest)
+			return false, retRestData
 		}
 
+		retRestData.ItemName = rRestData.ItemName
+		retRestData.Value = rRestData.Value
+
 		// 응답 테스트용
-		xml.NewEncoder(*data.Writer).Encode(rRestData) // 테스트용 Echo 데이터 설정
+		xml.NewEncoder(data.Writer).Encode(rRestData) // 테스트용 Echo 데이터 설정
 
 		// Client IP에 해당하는 restData.itemname 의 데이터를 찾는다.
 
@@ -47,12 +52,15 @@ func (data XmlData) ReqDataParse() bool {
 
 		if err != nil {
 			fmt.Printf("POST xml.Unmarshal Error : '%v'\n", err.Error())
-			http.Error(*data.Writer, err.Error(), http.StatusBadRequest)
-			return false
+			http.Error(data.Writer, err.Error(), http.StatusBadRequest)
+			return false, retRestData
 		}
 
+		retRestData.ItemName = rRestData.ItemName
+		retRestData.Value = rRestData.Value
+
 		// 응답 테스트용
-		xml.NewEncoder(*data.Writer).Encode(rRestData) // 테스트용 Echo 데이터 설정
+		xml.NewEncoder(data.Writer).Encode(rRestData) // 테스트용 Echo 데이터 설정
 
 		// Client IP에 해당하는 restData.itemname 의 데이터를 찾는다.
 
@@ -62,8 +70,16 @@ func (data XmlData) ReqDataParse() bool {
 
 	}
 
-	(*data.Writer).WriteHeader(http.StatusOK)
-	(*data.Writer).Header().Set("Content-Type", "application/xml")
+	(data.Writer).WriteHeader(http.StatusOK)
+	(data.Writer).Header().Set("Content-Type", "application/xml")
 
-	return true
+	return true, retRestData
 }
+
+// func (data XmlData) SetMapClientInfo(mapClientInfo *map[string]*pwc_svr_arg.PwcArg) {
+// 	m_mapClientInfo = *mapClientInfo
+// }
+
+// func (data XmlData) GetMapClientInfo() *map[string]*pwc_svr_arg.PwcArg {
+// 	return &m_mapClientInfo
+// }
